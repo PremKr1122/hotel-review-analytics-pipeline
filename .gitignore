@@ -1,0 +1,32 @@
+# Virtual environment
+newenv/
+venv/
+env/
+*.egg-info/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+logs/
+*.log
+
+# Raw and processed data (large, regeneratable from scripts)
+data/hotels/
+data/processed/
+
+# Environment variables / secrets
+.env
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.vscode/
+.idea/

@@ -11,6 +11,9 @@ select count(*) from reviews; -- 254569
 
 -- total rows with null review texts    
 select count(*) from reviews 
+where review_text is not null; -- 228783
+
+select count(*) from reviews 
 where review_text is null; -- 25786
 
 select count(*) from reviews where title like '?%'; -- 1682
@@ -19,7 +22,7 @@ select count(*) from reviews where title like '?%' and review_text is null; -- 1
 
 select * from reviews where title not like '?%' and review_text is null limit 20;
 
--- i.e. almost every row in column review_text is null corresponding to column title contains '?%'
+-- i.e. almost every row in column 'review_text' is null corresponding to column 'title' contains '?%'
 
 -- I am going to find out the names of the hotel where 'title' like '?%' so it is easy to detect
 -- in code that is it a encoding issue or not
@@ -83,25 +86,28 @@ limit 1;
     
 select distinct sentiment_label from reviews;
 
--- % of positive reviews
+-- positive reviews
+select count(*) from reviews where sentiment_label = 'positive'; -- 203151
+
 select
     round(sum(sentiment_label = 'positive') / count(sentiment_label) * 100, 2) as positive_reviews_pct
 from reviews;
 
--- % of negative reviews 
+-- negative reviews 
+select count(*) from reviews where sentiment_label = 'negative'; -- 24257
 
 select
     round(sum(sentiment_label = 'negative') / count(sentiment_label) * 100, 2) as negative_reviews_pct
 from reviews;
 
--- % of neutral reviews
+-- neutral reviews
+select count(*) from reviews where sentiment_label = 'neutral'; -- 1375
 
 select
     round(sum(sentiment_label = 'neutral') / count(sentiment_label) * 100, 2) as neutral_reviews_pct
 from reviews;
 
 -- Reviews tags by frequency 
-
 select
     aspect,
     count(*) as total_mentions,
@@ -134,7 +140,14 @@ group by h.city;
 
 
 -- Reviews over time 
+
 select distinct year(review_date) as Review_Year from reviews order by Review_Year;
+
+select distinct year(review_date) as Review_Year 
+from reviews
+where review_date is not null 
+and year(review_date) <> '2001'  
+order by Review_Year; -- since only few records for year 2001
 
 select count(*) from reviews where review_date is not null;
 select count(*) from reviews where review_date is null; -- 1587
@@ -152,6 +165,11 @@ order by no_date desc;
 -- Confirms whether actually there is no date in raw dataset -- Confirmed it is valid 
 
 -- Total reviews year wise 
+select  monthname(review_date) as mnth, 
+count(*) from reviews 
+where year(review_date)=2001 and review_date is not null
+group by mnth; -- very few reviews for year 2001
+
 select year(review_date) as Yr, count(review_id) as Total 
 	from reviews where review_date is not null group by (Yr) order by Yr;
     
@@ -178,6 +196,24 @@ from reviews
 where review_date is not null
 group by month(review_date), monthname(review_date)
 order by month(review_date);
+
+-- Average sentiment score by city
+select h.city as city, round(avg(r.sentiment_score),2) as avg_score 
+	from hotels as h inner join reviews as r 
+    on h.hotel_id = r.hotel_id
+    group by city;
+    
+-- Top 10 hotels by average sentiment :  limited to hotels with at least 50 reviews
+select h.hotel_name as hotel,
+       round(avg(r.sentiment_score), 2) as avg_score,
+       count(r.sentiment_score) as reviews_with_text
+from hotels as h
+inner join reviews as r on h.hotel_id = r.hotel_id
+group by h.hotel_id, h.hotel_name
+having count(r.sentiment_score) >= 50
+order by avg_score desc
+limit 10;
+    
 -- ======================================================
 
 -- Complaints Details .................

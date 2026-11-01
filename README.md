@@ -4,10 +4,60 @@ An end-to-end pipeline that turns messy, unstructured hotel review text into
 structured sentiment and aspect-level insights, loaded into MySQL and
 visualized in Power BI.
 
-Built using the [OpinRank Review Dataset](http://www.kavita-ganesan.com/entity-ranking-data)
-(~259,000 hotel reviews across 10 cities, scraped from TripAdvisor). After
-ingestion and cleaning, 254,569 reviews were loaded, and 228,783 of them have
-review text and are used for sentiment analysis.
+## Dataset
+
+Hotel reviews from the [OpinRank Review Dataset](http://www.kavita-ganesan.com/entity-ranking-data)
+by Kavita Ganesan, collected from TripAdvisor. That page is the HTML version
+of the dataset documentation. The full dataset also includes car reviews from
+Edmunds (~42,230 reviews, model years 2007 to 2009), which this project does
+not use.
+
+**As documented**
+
+- **Size:** about 259,000 hotel reviews.
+- **Cities (10):** Dubai, Beijing, London, New York City, New Delhi,
+  San Francisco, Shanghai, Montreal, Las Vegas, Chicago.
+- **Layout:** one folder per city and one file per hotel. The filename is
+  the hotel name.
+- **Format:** one review per line, with tab-separated fields:
+  `date<TAB>review title<TAB>full review`.
+- **Fields:** date, review title, and full review text only. There are no
+  star ratings or author names.
+
+**As loaded in this project**
+
+- 254,569 reviews from 2,567 hotels across the same 10 cities, after
+  ingestion and cleaning. This is slightly below the documented total, which
+  is approximate, and malformed lines are logged and skipped.
+- 228,783 of them have review text and are used for sentiment analysis (see
+  [Data notes and limitations](#data-notes-and-limitations)).
+- City and hotel name come from the folder and file names, since they are not
+  fields in the review lines.
+
+**Citation**
+
+The dataset's authors ask users to cite:
+
+> Kavita Ganesan and ChengXiang Zhai, "Opinion-Based Entity Ranking",
+> *Information Retrieval*, 2011.
+> [doi:10.1007/s10791-011-9174-8](https://doi.org/10.1007/s10791-011-9174-8)
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{opinrank,
+  title   = {Opinion-Based Entity Ranking},
+  journal = {Information Retrieval},
+  year    = {2011},
+  keywords = {adhoc multifaceted search, entity oriented search,
+              entity ranking, entity retrieval, product search},
+  doi     = {10.1007/s10791-011-9174-8},
+  author  = {Kavita Ganesan and ChengXiang Zhai}
+}
+```
+
+</details>
 
 ## Dashboard
 
@@ -78,12 +128,15 @@ Open it in Power BI Desktop and point it at your own MySQL database.
 ## Data notes and limitations
 
 - **Title-only reviews.** 25,786 reviews (about 10%) have a title but no
-  review text in the source files. This was verified against the raw data.
-  They stay in MySQL so source counts remain auditable, and are excluded
-  from sentiment analysis and the Power BI model.
+  review text in the source files, even though the documentation lists the
+  full review as a field. This was verified against the raw data. They stay
+  in MySQL so source counts remain auditable, and are excluded from
+  sentiment analysis and the Power BI model.
 - **`?` titles.** 1,682 titles start with `?` because non-Latin characters
   are already stored as `?` in the raw files. It is not an encoding fault in
   the pipeline, and 1,680 of those reviews have no text anyway.
+- **Trailing tab.** Review lines end with an extra tab, so each splits into
+  four fields with the last one empty. The parser drops that empty field.
 - **Missing dates.** 1,587 reviews have no date in the source. The Review
   Date slicer excludes them, which is why the dashboard cards show 227,196
   reviews instead of 228,783. The SQL queries include them.
@@ -122,8 +175,9 @@ Python, pandas, NLTK/VADER, MySQL, SQLAlchemy, SQL, Power BI, DAX
    venv\Scripts\activate      # Windows
    pip install -r requirements.txt
    ```
-2. Download the OpinRank dataset and place hotel review folders under
-   `data/hotels/`.
+2. Get the hotel reviews from the
+   [OpinRank dataset page](http://www.kavita-ganesan.com/entity-ranking-data)
+   and place the 10 city folders under `data/hotels/`.
 3. Set your MySQL credentials as environment variables:
    ```
    $env:MYSQL_USER = "root"
